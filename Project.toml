@@ -1,0 +1,7 @@
+name = "RelationalData"
+uuid = "a33ac756-1620-48a9-9db2-bf32737cc175"
+authors = ["Torbjörn Gannholm <torbjorn.gannholm@gmail.com>"]
+version = "0.1.0"
+
+[deps]
+Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"

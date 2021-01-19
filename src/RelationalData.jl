@@ -1,5 +1,22 @@
 module RelationalData
-export Relation
+export Heading, Relation
+
+struct Heading
+  names::Tuple{Symbol, N} where N
+  types::Tuple{DataType, N} where N
+
+  function Heading(h::NamedTuple{names, Tuple{DataType, N}} where {names, N})
+    sorted = (sort([keys(h)...])...,)
+    head = NamedTuple{sorted}(h)
+    new(sorted, values(head))
+  end
+
+  function Heading(h::NamedTuple)
+    sorted = (sort([keys(h)...])...,)
+    head = NamedTuple{sorted}(h)
+    new(sorted, (typeof(head).types...,))
+  end
+end
 
 struct Relation{names, T}
   body::AbstractSet{NamedTuple{names, T}}

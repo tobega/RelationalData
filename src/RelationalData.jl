@@ -1,11 +1,16 @@
 module RelationalData
-export Heading, Relation
+export Heading, apply, Relation
 
+"""
+    Heading
+
+A `Heading` defines names and types for a relation.
+"""
 struct Heading
-  names::Tuple{Symbol, N} where N
-  types::Tuple{DataType, N} where N
+  names::Tuple{Vararg{Symbol}}
+  types::Tuple{Vararg{DataType}}
 
-  function Heading(h::NamedTuple{names, Tuple{DataType, N}} where {names, N})
+  function Heading(h::NamedTuple{names, T} where {names, T<:Tuple{Vararg{DataType}}})
     sorted = (sort([keys(h)...])...,)
     head = NamedTuple{sorted}(h)
     new(sorted, values(head))
@@ -16,6 +21,18 @@ struct Heading
     head = NamedTuple{sorted}(h)
     new(sorted, (typeof(head).types...,))
   end
+end
+
+"""
+    apply(h::Heading, nt::NamedTuple)
+
+Asserts that the named tuple conforms to the heading and returns the named tuple with attributes sorted in the canonical order.
+"""
+function apply(h::Heading, nt::NamedTuple)
+  length(nt) == length(h.names) || throw(DomainError(nt, "Does not match $h"))
+  ont = NamedTuple{h.names}(nt)
+  isa(values(ont), Tuple{h.types...}) || throw(DomainError(nt, "Does not match $h"))
+  ont
 end
 
 struct Relation{names, T}

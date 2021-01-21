@@ -20,4 +20,4 @@ using Test, RelationalData
 
 @test_throws ErrorException shapeto((b = 500, c = 500), Heading((c = Int, a = Int)))
 
-@test typeof(Relation([(a=1, b="foo", c=3.14)])) == Relation{(:a, :b, :c), Tuple{Int64, String, Float64}}
+@test Relation(Set([(a=1, b="foo", c=3.14)])).heading == Heading((a=Int64, b=String, c=Float64))

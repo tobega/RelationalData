@@ -36,21 +36,16 @@ function shapeto(nt::NamedTuple, h::Heading)
   convert(NamedTuple{h.names, Tuple{h.types...}}, ont)
 end
 
-struct Relation{names, T}
-  body::AbstractSet{NamedTuple{names, T}}
+struct Relation
+  heading::Heading
+  body::Set{NamedTuple}
 
-  Relation{names, T}() where {names, T} = new(Set{NamedTuple{names, T}}())
-  Relation{names, T}(s::AbstractSet{NamedTuple{names, T}}) where {names, T} = new(s)
-  Relation(s::AbstractSet{NamedTuple{names, T}}) where {names, T} = new{names, T}(s)
+  Relation(heading::Heading) = new(heading, Set{NamedTuple{heading.names, Tuple{heading.types...}}}())
+  Relation(heading::Heading, s::AbstractSet{T}) where {T<:NamedTuple} = new(heading, Set(shapeto.(s, Ref(heading))))
+  function Relation(s::AbstractSet{NamedTuple{names, T}}) where {names, T}
+    heading = Heading((; zip(names, fieldtypes(T))...))
+    new(heading, Set(shapeto.(s, Ref(heading))))
+  end
 end
-
-Relation(itr) = _Relation(itr, Base.IteratorEltype(itr))
-
-_Relation(itr, ::Base.HasEltype) = Relation(Set{eltype(itr)}(itr))
-
-Base.iterate(r::Relation) = iterate(r.body)
-Base.iterate(r::Relation, state) = iterate(r.body, state)
-Base.length(r::Relation) = length(r.body)
-Base.eltype(::Type{Relation{names, T}}) where {names, T} = NamedTuple{names, T}
 
 end # module

@@ -1,5 +1,5 @@
 module RelationalData
-export Heading, apply, Relation
+export Heading, shapeto, Relation
 
 """
     Heading
@@ -24,15 +24,16 @@ struct Heading
 end
 
 """
-    apply(h::Heading, nt::NamedTuple)
+    shapeto(nt::NamedTuple, h::Heading)
 
-Asserts that the named tuple conforms to the heading and returns the named tuple with attributes sorted in the canonical order.
+Returns the named tuple converted to conform to the heading with attributes sorted in the canonical order
+and types converted as appropriate (only safe conversions). Throws if conversion is impossible.
 """
-function apply(h::Heading, nt::NamedTuple)
+function shapeto(nt::NamedTuple, h::Heading)
   length(nt) == length(h.names) || throw(DomainError(nt, "Does not match $h"))
+  # For some reason we can't get the order right for the types here
   ont = NamedTuple{h.names}(nt)
-  isa(values(ont), Tuple{h.types...}) || throw(DomainError(nt, "Does not match $h"))
-  ont
+  convert(NamedTuple{h.names, Tuple{h.types...}}, ont)
 end
 
 struct Relation{names, T}

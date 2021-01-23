@@ -7,13 +7,6 @@ export Heading, shapeto, Relation
 A `Heading` defines names and types for a relation.
 """
 struct Heading{names, T}
-  function Heading{names, T}() where {names, T<:Tuple}
-    sorted = (sort([names...])...,)
-    h = NamedTuple{names}(fieldtypes(T))
-    head = NamedTuple{sorted}(h)
-    new{sorted, Tuple{values(head)...}}()
-  end
-
   function Heading(h::NamedTuple{names, T} where {names, T<:Tuple{Vararg{DataType}}})
     sorted = (sort([keys(h)...])...,)
     head = NamedTuple{sorted}(h)
@@ -42,16 +35,20 @@ function shapeto(nt::NamedTuple, h::Heading)
   convert(NamedTuple{names, head.parameters[2]}, ont)
 end
 
-struct Relation
-  heading::Heading
+struct Relation{heading}
   body::Set{NamedTuple}
 
-  Relation(heading::Heading) = new(heading, Set{NamedTuple{heading.names, Tuple{heading.types...}}}())
-  Relation(heading::Heading, s::AbstractSet{T}) where {T<:NamedTuple} = new(heading, Set(shapeto.(s, Ref(heading))))
+  Relation(heading::Heading) = new{heading}(Set{NamedTuple{typeof(heading).parameters...}}())
+  Relation(heading::Heading, s::AbstractSet{T}) where {T<:NamedTuple} = new{heading}(Set(shapeto.(s, Ref(heading))))
   function Relation(s::AbstractSet{NamedTuple{names, T}}) where {names, T}
     heading = Heading((; zip(names, fieldtypes(T))...))
-    new(heading, Set(shapeto.(s, Ref(heading))))
+    new{heading}(Set(shapeto.(s, Ref(heading))))
   end
+  function Relation(nts::NamedTuple{names, T}...) where {names, T}
+    heading = Heading((; zip(names, fieldtypes(T))...))
+    new{heading}(Set(shapeto.(nts, Ref(heading))))
+  end
+  Relation(heading::Heading{names, T}, values::T...) where {names, T} = new{heading}(Set(NamedTuple{names, T}.(values)))
 end
 
 end # module

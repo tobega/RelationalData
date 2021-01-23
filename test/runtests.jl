@@ -20,4 +20,14 @@ using Test, RelationalData
 
 @test_throws ErrorException shapeto((b = 500, c = 500), Heading((c = Int, a = Int)))
 
-@test Relation(Set([(a=1, b="foo", c=3.14)])).heading == Heading((a=Int64, b=String, c=Float64))
+@test typeof(Relation(Heading((a=Int64, b=String, c=Float64)))).parameters[1] == Heading((a=Int64, b=String, c=Float64))
+
+@test typeof(Relation(Set([(a=1, b="foo", c=3.14)]))).parameters[1] == Heading((a=Int64, b=String, c=Float64))
+
+@test typeof(Relation(Set([(a=Int8(1), b="foo"), (a=Int8(3), b="foo")]))).parameters[1] == Heading((a=Int8, b=String))
+
+@test typeof(Relation((a=Int8(1), b="foo"), (a=Int8(3), b="foo"))).parameters[1] == Heading((a=Int8, b=String))
+
+@test Relation((a=1, b="foo"), (a=3, b="bar")).body == Set([(a=1, b="foo"), (a=3, b="bar")])
+
+@test Relation(Heading((a=Int64, b=String)), (1, "foo"), (3, "bar")).body == Set([(a=1, b="foo"), (a=3, b="bar")])

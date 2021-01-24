@@ -47,3 +47,17 @@ using Test, RelationalData
 @test typeof(Relation([()])).parameters[1] == Heading()
 
 @test typeof(Relation([(a=1, b="foo"), (a=3.14, b="bar"), (b="qux", a=6)])).parameters[1] == Heading((a=Float64, b=String))
+
+@test [t.a for t in Relation((a=1, b=2), (a=5, b=9))] == [1,5]
+
+@test filter(t -> t.a < 4, Relation((a=1, b=2), (a=5, b=9))) == Relation((a=1, b=2))
+
+@test Relation(Heading((a=Int8, b=Int8))) != Relation(Heading((a=Int64, b=Int64)))
+
+@test restrict(Relation((a=1, b=2), (a=5, b=9)), t -> t.a < 4) == Relation((a=1, b=2))
+
+@test extend(Relation((a=1, b=2), (a=5, b=9)), :sum, t -> t.a+t.b) == Relation((a=1, b=2, sum=3), (a=5, b=9, sum=14))
+
+@test rename(Relation((a=1, b=2), (a=5, b=9)), :a=>:x) == Relation((x=1, b=2), (x=5, b=9))
+
+@test rename(Relation((a=1, b=2), (a=5, b=9)), :a=>:y, :b=>:x) == Relation((y=1, x=2), (y=5, x=9))

@@ -1,5 +1,5 @@
 module RelationalData
-export Heading, shapeto, Relation, TABLE_DUM, TABLE_DEE
+export Heading, shapeto, Relation, TABLE_DUM, TABLE_DEE, restrict, extend, rename
 
 """
     Heading
@@ -38,6 +38,11 @@ function shapeto(nt::NamedTuple, h::Heading)
   convert(NamedTuple{names, head.parameters[2]}, ont)
 end
 
+"""
+    Relation
+
+A Relation is a set of named tuples conforming to a Heading
+"""
 struct Relation{heading}
   body::Set{NamedTuple}
 
@@ -84,5 +89,30 @@ end
 
 const TABLE_DUM = Relation()
 const TABLE_DEE = Relation(())
+
+Base.iterate(r::Relation, i...) = iterate(r.body, i...)
+Base.IteratorSize(r::Relation) = Base.HasLength()
+Base.length(r::Relation) = length(r.body)
+Base.IteratorEltype(r::Relation) = Base.HasEltype()
+Base.eltype(r::Relation{heading}) where {heading} = NamedTuple{typeof(heading).parameters...}
+
+Base.:(==)(q::Relation{h}, r::Relation{h}) where {h} = q.body == r.body
+Base.:(==)(q::Relation{qh}, r::Relation{rh}) where {qh, rh} = false
+
+Base.filter(f, r::Relation) = Relation(filter(f, r.body))
+restrict(r::Relation, f) = filter(f, r)
+
+"""
+    extend(r::Relation, s::Symbol, f)
+
+Extends every tuple of a relation with the given symbol assigned the value obtained by applying function f to the tuple.
+"""
+extend(r::Relation, s::Symbol, f) = Relation([merge(t, (; s => f(t))) for t in r.body])
+
+function rename(r::Relation{heading}, p::Pair{Symbol,Symbol}...) where {heading}
+  replacements = Dict(p...)
+  renamed = map(n -> get(replacements, n, n), typeof(heading).parameters[1])
+  Relation(Set([NamedTuple{renamed, typeof(heading).parameters[2]}(values(nt)) for nt in r.body]))
+end
 
 end # module

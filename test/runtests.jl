@@ -1,5 +1,7 @@
 using Test, RelationalData
 
+@test typeof(Heading()) == Heading{(), Tuple{}}
+
 @test Heading((a = Int, b = String)) == Heading((b = String, a = Int))
 
 @test Heading((d = 1, e = "foo")) == Heading((e = "bar", d = 2))
@@ -31,3 +33,11 @@ using Test, RelationalData
 @test Relation((a=1, b="foo"), (a=3, b="bar")).body == Set([(a=1, b="foo"), (a=3, b="bar")])
 
 @test Relation(Heading((a=Int64, b=String)), (1, "foo"), (3, "bar")).body == Set([(a=1, b="foo"), (a=3, b="bar")])
+
+@test Relation(Heading((a=Int64, b=String)), [(1, "foo"), (3, "bar")]).body == Set([(a=1, b="foo"), (a=3, b="bar")])
+
+@test typeof(Relation()).parameters[1] == Heading()
+
+@test typeof(Relation([])).parameters[1] == Heading()
+
+@test typeof(Relation([(a=1, b="foo"), (a=3.14, b="bar"), (b="qux", a=6)])).parameters[1] == Heading((a=Float64, b=String))

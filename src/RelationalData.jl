@@ -8,6 +8,7 @@ A `Heading` defines names and types for a relation.
 """
 struct Heading{names, T}
   Heading() = new{(), Tuple{}}()
+  Heading(empty::Tuple{}) = new{(), Tuple{}}()
 
   function Heading(h::NamedTuple{names, T} where {names, T<:Tuple{Vararg{DataType}}})
     sorted = (sort([keys(h)...])...,)
@@ -53,7 +54,7 @@ struct Relation{heading}
   Relation(heading::Heading{names, T}, values::T...) where {names, T} = new{heading}(Set(NamedTuple{names, T}.(values)))
   Relation(heading::Heading{names, T}, itr) where {names, T} = new{heading}(Set(NamedTuple{names, T}.(itr)))
   Relation() = new{Heading()}()
-  Relation(empty::Tuple{}...) = new{Heading()}(empty[1])
+  Relation(empty::Tuple{}...) = new{Heading()}(Set(NamedTuple{(), Tuple{}}(empty[1])))
 end
 
 function _promote(h::Heading, nt::NamedTuple)

@@ -1,5 +1,5 @@
 module RelationalData
-export Heading, shapeto, Relation, TABLE_DUM, TABLE_DEE, restrict, extend, rename
+export Heading, shapeto, Relation, TABLE_DUM, TABLE_DEE, restrict, extend, rename, project, naturaljoin
 
 """
     Heading
@@ -107,12 +107,19 @@ restrict(r::Relation, f) = filter(f, r)
 
 Extends every tuple of a relation with the given symbol assigned the value obtained by applying function f to the tuple.
 """
-extend(r::Relation, s::Symbol, f) = Relation([merge(t, (; s => f(t))) for t in r.body])
+extend(r::Relation, s::Symbol, f) = Relation([merge(t, (; s => f(t))) for t in r])
 
 function rename(r::Relation{heading}, p::Pair{Symbol,Symbol}...) where {heading}
   replacements = Dict(p...)
   renamed = map(n -> get(replacements, n, n), typeof(heading).parameters[1])
-  Relation(Set([NamedTuple{renamed, typeof(heading).parameters[2]}(values(nt)) for nt in r.body]))
+  Relation(Set([NamedTuple{renamed, typeof(heading).parameters[2]}(values(nt)) for nt in r]))
+end
+
+project(r::Relation, names::Symbol...) = Relation(Set(NamedTuple{(names...,)}.(r)))
+
+function naturaljoin(r1::Relation{h1}, r2::Relation{h2}) where {h1, h2}
+  common = (intersect(typeof(h1).parameters[1], typeof(h2).parameters[1])...,)
+  Relation(Set([merge(nt1, nt2) for nt1 in r1 for nt2 in r2 if NamedTuple{common}(nt1) == NamedTuple{common}(nt2)]))
 end
 
 end # module

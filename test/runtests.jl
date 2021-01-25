@@ -61,3 +61,11 @@ using Test, RelationalData
 @test rename(Relation((a=1, b=2), (a=5, b=9)), :a=>:x) == Relation((x=1, b=2), (x=5, b=9))
 
 @test rename(Relation((a=1, b=2), (a=5, b=9)), :a=>:y, :b=>:x) == Relation((y=1, x=2), (y=5, x=9))
+
+@test project(Relation((a=1, b=2, c="foo"), (a=1, b=3, c="foo"), (a=5, b=9, c="bar")), :a, :c) == Relation((a=1, c="foo"), (a=5, c="bar"))
+
+@test_throws ErrorException project(Relation((a=1, b=2, c="foo"), (a=1, b=3, c="foo"), (a=5, b=9, c="bar")), :a, :z)
+
+@test naturaljoin(Relation((a=1, b=2), (a=5, b=9)), Relation((a=1, c="foo"), (a=1, c="bar"), (a=2, c="foo"))) == Relation((a=1, b=2, c="foo"), (a=1, b=2, c="bar"))
+
+@test naturaljoin(Relation((a=1, b=2)), Relation((c="foo",), (c="bar",))) == Relation((a=1, b=2, c="foo"), (a=1, b=2, c="bar"))

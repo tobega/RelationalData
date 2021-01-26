@@ -6,21 +6,26 @@ export Heading, shapeto, Relation, TABLE_DUM, TABLE_DEE, restrict, extend, renam
 
 A `Heading` defines names and types for a relation.
 """
-struct Heading{names, T}
-  Heading() = new{(), Tuple{}}()
-  Heading(empty::Tuple{}) = new{(), Tuple{}}()
+struct Heading
+  names
+  t
+
+  Heading() = new((), Tuple{})
+  Heading(empty::Tuple{}) = new((), Tuple{})
 
   function Heading(h::NamedTuple{names, T} where {names, T<:Tuple{Vararg{DataType}}})
     sorted = (sort([keys(h)...])...,)
     head = NamedTuple{sorted}(h)
-    new{sorted, Tuple{values(head)...}}()
+    new(sorted, Tuple{values(head)...})
   end
 
   function Heading(h::NamedTuple)
     sorted = (sort([keys(h)...])...,)
     head = NamedTuple{sorted}(h)
-    new{sorted, Tuple{typeof(head).types...}}()
+    new(sorted, Tuple{typeof(head).types...})
   end
+
+  Heading(h::Heading, types::DataType...) = new(h.names, Tuple{types...})
 end
 
 """
@@ -30,12 +35,10 @@ Returns the named tuple converted to conform to the heading with attributes sort
 and types converted as appropriate (only safe conversions). Throws if conversion is impossible.
 """
 function shapeto(nt::NamedTuple, h::Heading)
-  head = typeof(h)
-  names = head.parameters[1]
-  length(nt) == length(names) || throw(DomainError(nt, "Does not match $h"))
+  length(nt) == length(h.names) || throw(DomainError(nt, "Does not match $h"))
   # For some reason we can't get the order right for the types here
-  ont = NamedTuple{names}(nt)
-  convert(NamedTuple{names, head.parameters[2]}, ont)
+  ont = NamedTuple{h.names}(nt)
+  convert(NamedTuple{h.names, h.t}, ont)
 end
 
 """
@@ -46,30 +49,28 @@ A Relation is a set of named tuples conforming to a Heading
 struct Relation{names, T}
   body::Set{NamedTuple}
 
-  Relation(heading::Heading) = new{typeof(heading).parameters[1], typeof(heading).parameters[2]}(Set{NamedTuple{typeof(heading).parameters...}}())
-  Relation(heading::Heading, s::AbstractSet{T}) where {T<:NamedTuple} = new{typeof(heading).parameters[1], typeof(heading).parameters[2]}(Set(shapeto.(s, Ref(heading))))
+  Relation(heading::Heading) = new{heading.names, heading.t}(Set{NamedTuple{heading.names, heading.t}}())
+  Relation(heading::Heading, s::AbstractSet{T}) where {T<:NamedTuple} = new{heading.names, heading.t}(Set(shapeto.(s, Ref(heading))))
   function Relation(s::AbstractSet{NamedTuple{names, T}}) where {names, T}
     heading = Heading((; zip(names, fieldtypes(T))...))
-    new{typeof(heading).parameters[1], typeof(heading).parameters[2]}(Set(shapeto.(s, Ref(heading))))
+    new{heading.names, heading.t}(Set(shapeto.(s, Ref(heading))))
   end
   function Relation(nts::NamedTuple{names, T}...) where {names, T}
     heading = Heading((; zip(names, fieldtypes(T))...))
-    new{typeof(heading).parameters[1], typeof(heading).parameters[2]}(Set(shapeto.(nts, Ref(heading))))
+    new{heading.names, heading.t}(Set(shapeto.(nts, Ref(heading))))
   end
-  Relation(heading::Heading{names, T}, values::T...) where {names, T} = new{names, T}(Set(NamedTuple{names, T}.(values)))
-  Relation(heading::Heading{names, T}, itr) where {names, T} = new{names, T}(Set(NamedTuple{names, T}.(itr)))
+  Relation(heading::Heading, values::T...) where {T} = new{heading.names, heading.t}(Set(NamedTuple{heading.names, heading.t}.(values)))
+  Relation(heading::Heading, itr) = new{heading.names, heading.t}(Set(NamedTuple{heading.names, heading.t}.(itr)))
   Relation() = new{(), Tuple{}}()
   Relation(empty::Tuple{}...) = new{(), Tuple{}}(Set(NamedTuple{(), Tuple{}}(empty[1])))
 end
 
 function _promote(h::Heading, nt::NamedTuple)
-  head = typeof(h)
-  names = head.parameters[1]
-  length(nt) == length(names) || throw(DomainError(nt, "Does not match $h"))
+  length(nt) == length(h.names) || throw(DomainError(nt, "Does not match $h"))
   # For some reason we can't get the order right for the types here
-  ont = NamedTuple{names}(nt)
-  htypes = promote_type.(fieldtypes(head.parameters[2]), fieldtypes(typeof(ont).parameters[2]))
-  Heading(convert(NamedTuple{names, Tuple{htypes...}}, ont))
+  ont = NamedTuple{h.names}(nt)
+  htypes = promote_type.(fieldtypes(h.t), fieldtypes(typeof(ont).parameters[2]))
+  Heading(h, htypes...)
 end
 
 function Relation(itr)
@@ -84,7 +85,7 @@ function Relation(itr)
     heading = _promote(heading, nt)
     next = iterate(itr, state)
   end
-  Relation(heading, NamedTuple{typeof(heading).parameters[1]}.(itr))
+  Relation(heading, NamedTuple{heading.names}.(itr))
 end
 
 const TABLE_DUM = Relation()

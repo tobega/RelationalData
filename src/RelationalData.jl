@@ -43,23 +43,23 @@ end
 
 A Relation is a set of named tuples conforming to a Heading
 """
-struct Relation{heading}
+struct Relation{names, T}
   body::Set{NamedTuple}
 
-  Relation(heading::Heading) = new{heading}(Set{NamedTuple{typeof(heading).parameters...}}())
-  Relation(heading::Heading, s::AbstractSet{T}) where {T<:NamedTuple} = new{heading}(Set(shapeto.(s, Ref(heading))))
+  Relation(heading::Heading) = new{typeof(heading).parameters[1], typeof(heading).parameters[2]}(Set{NamedTuple{typeof(heading).parameters...}}())
+  Relation(heading::Heading, s::AbstractSet{T}) where {T<:NamedTuple} = new{typeof(heading).parameters[1], typeof(heading).parameters[2]}(Set(shapeto.(s, Ref(heading))))
   function Relation(s::AbstractSet{NamedTuple{names, T}}) where {names, T}
     heading = Heading((; zip(names, fieldtypes(T))...))
-    new{heading}(Set(shapeto.(s, Ref(heading))))
+    new{typeof(heading).parameters[1], typeof(heading).parameters[2]}(Set(shapeto.(s, Ref(heading))))
   end
   function Relation(nts::NamedTuple{names, T}...) where {names, T}
     heading = Heading((; zip(names, fieldtypes(T))...))
-    new{heading}(Set(shapeto.(nts, Ref(heading))))
+    new{typeof(heading).parameters[1], typeof(heading).parameters[2]}(Set(shapeto.(nts, Ref(heading))))
   end
-  Relation(heading::Heading{names, T}, values::T...) where {names, T} = new{heading}(Set(NamedTuple{names, T}.(values)))
-  Relation(heading::Heading{names, T}, itr) where {names, T} = new{heading}(Set(NamedTuple{names, T}.(itr)))
-  Relation() = new{Heading()}()
-  Relation(empty::Tuple{}...) = new{Heading()}(Set(NamedTuple{(), Tuple{}}(empty[1])))
+  Relation(heading::Heading{names, T}, values::T...) where {names, T} = new{names, T}(Set(NamedTuple{names, T}.(values)))
+  Relation(heading::Heading{names, T}, itr) where {names, T} = new{names, T}(Set(NamedTuple{names, T}.(itr)))
+  Relation() = new{(), Tuple{}}()
+  Relation(empty::Tuple{}...) = new{(), Tuple{}}(Set(NamedTuple{(), Tuple{}}(empty[1])))
 end
 
 function _promote(h::Heading, nt::NamedTuple)
@@ -94,10 +94,10 @@ Base.iterate(r::Relation, i...) = iterate(r.body, i...)
 Base.IteratorSize(r::Relation) = Base.HasLength()
 Base.length(r::Relation) = length(r.body)
 Base.IteratorEltype(r::Relation) = Base.HasEltype()
-Base.eltype(r::Relation{heading}) where {heading} = NamedTuple{typeof(heading).parameters...}
+Base.eltype(r::Relation{names, T}) where {names, T} = NamedTuple{names, T}
 
-Base.:(==)(q::Relation{h}, r::Relation{h}) where {h} = q.body == r.body
-Base.:(==)(q::Relation{qh}, r::Relation{rh}) where {qh, rh} = false
+Base.:(==)(q::Relation{names, T}, r::Relation{names, T}) where {names, T} = q.body == r.body
+Base.:(==)(q::Relation{qnames, Q}, r::Relation{rnames, R}) where {qnames, Q, rnames, R} = false
 
 Base.filter(f, r::Relation) = Relation(filter(f, r.body))
 restrict(r::Relation, f) = filter(f, r)
@@ -109,16 +109,16 @@ Extends every tuple of a relation with the given symbol assigned the value obtai
 """
 extend(r::Relation, s::Symbol, f) = Relation([merge(t, (; s => f(t))) for t in r])
 
-function rename(r::Relation{heading}, p::Pair{Symbol,Symbol}...) where {heading}
+function rename(r::Relation{names, T}, p::Pair{Symbol,Symbol}...) where {names, T}
   replacements = Dict(p...)
-  renamed = map(n -> get(replacements, n, n), typeof(heading).parameters[1])
-  Relation(Set([NamedTuple{renamed, typeof(heading).parameters[2]}(values(nt)) for nt in r]))
+  renamed = map(n -> get(replacements, n, n), names)
+  Relation(Set([NamedTuple{renamed, T}(values(nt)) for nt in r]))
 end
 
 project(r::Relation, names::Symbol...) = Relation(Set(NamedTuple{(names...,)}.(r)))
 
-function naturaljoin(r1::Relation{h1}, r2::Relation{h2}) where {h1, h2}
-  common = (intersect(typeof(h1).parameters[1], typeof(h2).parameters[1])...,)
+function naturaljoin(r1::Relation{names1, T1}, r2::Relation{names2, T2}) where {names1, T1, names2, T2}
+  common = (intersect(names1, names2)...,)
   Relation(Set([merge(nt1, nt2) for nt1 in r1 for nt2 in r2 if NamedTuple{common}(nt1) == NamedTuple{common}(nt2)]))
 end
 

@@ -24,13 +24,13 @@ using Test, RelationalData
 
 @test_throws ErrorException shapeto((b = 500, c = 500), Heading((c = Int, a = Int)))
 
-@test typeof(Relation(Heading((a=Int64, b=String, c=Float64)))).parameters[1] == Heading((a=Int64, b=String, c=Float64))
+@test typeof(Relation(Heading((a=Int64, b=String, c=Float64)))).parameters == typeof(Heading((a=Int64, b=String, c=Float64))).parameters
 
-@test typeof(Relation(Set([(a=1, b="foo", c=3.14)]))).parameters[1] == Heading((a=Int64, b=String, c=Float64))
+@test typeof(Relation(Set([(a=1, b="foo", c=3.14)]))).parameters == typeof(Heading((a=Int64, b=String, c=Float64))).parameters
 
-@test typeof(Relation(Set([(a=Int8(1), b="foo"), (a=Int8(3), b="foo")]))).parameters[1] == Heading((a=Int8, b=String))
+@test typeof(Relation(Set([(a=Int8(1), b="foo"), (a=Int8(3), b="foo")]))).parameters == typeof(Heading((a=Int8, b=String))).parameters
 
-@test typeof(Relation((a=Int8(1), b="foo"), (a=Int8(3), b="foo"))).parameters[1] == Heading((a=Int8, b=String))
+@test typeof(Relation((a=Int8(1), b="foo"), (a=Int8(3), b="foo"))).parameters == typeof(Heading((a=Int8, b=String))).parameters
 
 @test Relation((a=1, b="foo"), (a=3, b="bar")).body == Set([(a=1, b="foo"), (a=3, b="bar")])
 
@@ -38,15 +38,15 @@ using Test, RelationalData
 
 @test Relation(Heading((a=Int64, b=String)), [(1, "foo"), (3, "bar")]).body == Set([(a=1, b="foo"), (a=3, b="bar")])
 
-@test typeof(Relation()).parameters[1] == Heading()
+@test typeof(Relation()).parameters == typeof(Heading()).parameters
 
-@test typeof(Relation(())).parameters[1] == Heading()
+@test typeof(Relation(())).parameters == typeof(Heading()).parameters
 
-@test typeof(Relation([])).parameters[1] == Heading()
+@test typeof(Relation([])).parameters == typeof(Heading()).parameters
 
-@test typeof(Relation([()])).parameters[1] == Heading()
+@test typeof(Relation([()])).parameters == typeof(Heading()).parameters
 
-@test typeof(Relation([(a=1, b="foo"), (a=3.14, b="bar"), (b="qux", a=6)])).parameters[1] == Heading((a=Float64, b=String))
+@test typeof(Relation([(a=1, b="foo"), (a=3.14, b="bar"), (b="qux", a=6)])).parameters == typeof(Heading((a=Float64, b=String))).parameters
 
 @test [t.a for t in Relation((a=1, b=2), (a=5, b=9))] == [1,5]
 

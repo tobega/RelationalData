@@ -159,4 +159,6 @@ function Base.union(r1::Relation{names, T}, relations::Relation{names, T}...) wh
   Relation(names, T, union(r1.body, [r.body for r in relations]...))
 end
 
+Base.map(f, r::Relation) = Relation([f(t) for t in r])
+
 end # module

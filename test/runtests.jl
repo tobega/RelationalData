@@ -82,6 +82,10 @@ using Test, RelationalData
 
 @test naturaljoin(Relation((a=1, b=2)), Relation((c="foo",), (c="bar",))) == Relation((a=1, b=2, c="foo"), (a=1, b=2, c="bar"))
 
+@test Relation((a=1, b=2), (a=5, b=9)) ⨝ Relation((a=1, c="foo"), (a=1, c="bar"), (a=2, c="foo")) == Relation((a=1, b=2, c="foo"), (a=1, b=2, c="bar"))
+
+@test naturaljoin(Relation((a=1,), (a=2,)), Relation((c="foo",), (c="bar",)), Relation((b=3.14,))) == Relation((a=1, c="foo", b=3.14), (a=1, c="bar", b=3.14), (a=2, c="foo", b=3.14), (a=2, c="bar", b=3.14), )
+
 @test union(Relation((c="bar", a=1)), Relation((a=4, c="foo"))) == Relation((a=1, c="bar"), (a=4, c="foo"))
 
 @test union(Relation((c="bar", a=1)), Relation((c="bar", a=1))) == Relation((c="bar", a=1))

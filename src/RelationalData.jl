@@ -1,5 +1,5 @@
 module RelationalData
-export Relation, TABLE_DUM, TABLE_DEE, restrict, extend, rename, project, naturaljoin
+export Relation, TABLE_DUM, TABLE_DEE, restrict, extend, rename, project, naturaljoin, ⨝
 
 """
     Heading
@@ -145,9 +145,14 @@ end
 
 project(r::Relation, names::Symbol...) = Relation(Set(NamedTuple{(names...,)}.(r)))
 
-function naturaljoin(r1::Relation{names1, T1}, r2::Relation{names2, T2}) where {names1, T1, names2, T2}
+function ⨝(r1::Relation{names1, T1}, r2::Relation{names2, T2}) where {names1, T1, names2, T2}
   common = (intersect(names1, names2)...,)
   Relation(Set([merge(nt1, nt2) for nt1 in r1 for nt2 in r2 if NamedTuple{common}(nt1) == NamedTuple{common}(nt2)]))
+end
+
+function naturaljoin(r1::Relation, relations::Relation...)
+  length(relations) == 1 && return r1 ⨝ relations[1]
+  r1 ⨝ naturaljoin(relations...)
 end
 
 function Base.union(r1::Relation{names, T}, relations::Relation{names, T}...) where {names, T}

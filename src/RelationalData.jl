@@ -86,8 +86,8 @@ struct Relation{names, T}
     reorderedValues = NamedTuple{heading.names}.(namedValues)
     new{heading.names, heading.t}(Set(NamedTuple{heading.names, heading.t}.(reorderedValues)))
   end
-  Relation() = new{(), Tuple{}}()
-  Relation(empty::Tuple{}...) = new{(), Tuple{}}(Set(NamedTuple{(), Tuple{}}(empty[1])))
+  Relation() = new{(), Tuple{}}(Set{NamedTuple{(), Tuple{}}}())
+  Relation(empty::Tuple...) = new{(), Tuple{}}(Set([NamedTuple{(), Tuple{}}(empty[1])]))
   # trusted constructor
   Relation(names::Tuple{Vararg{Symbol}}, t::Type{T}, body::AbstractSet{V}) where {T<:Tuple, V<:NamedTuple} = new{names, t}(body)
 end

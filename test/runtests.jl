@@ -52,11 +52,19 @@ using Test, RelationalData
 
 @test (typeof(Relation()).parameters...,) == ((), Tuple{})
 
+@test length(Relation().body) == 0
+
 @test (typeof(Relation(())).parameters...,) == ((), Tuple{})
+
+@test length(Relation(()).body) == 1
 
 @test (typeof(Relation([])).parameters...,) == ((), Tuple{})
 
+@test length(Relation([]).body) == 0
+
 @test (typeof(Relation([()])).parameters...,) == ((), Tuple{})
+
+@test length(Relation([()]).body) == 1
 
 @test (typeof(Relation([(a=1, b="foo"), (a=3.14, b="bar"), (b="qux", a=6)])).parameters...,) == ((:a, :b), Tuple{Float64, String})
 

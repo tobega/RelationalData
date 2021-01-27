@@ -1,5 +1,5 @@
 module RelationalData
-export Heading, shapeto, Relation, TABLE_DUM, TABLE_DEE, restrict, extend, rename, project, naturaljoin
+export Relation, TABLE_DUM, TABLE_DEE, restrict, extend, rename, project, naturaljoin
 
 """
     Heading
@@ -41,6 +41,11 @@ function shapeto(nt::NamedTuple, h::Heading)
   convert(NamedTuple{h.names, h.t}, ont)
 end
 
+function shapeto(empty::Tuple{}, h::Heading)
+  length(h.names) == 0 || throw(DomainError(empty, "Does not match $h"))
+  NamedTuple{h.names}(empty)
+end
+
 """
     Relation
 
@@ -49,8 +54,15 @@ A Relation is a set of named tuples conforming to a Heading
 struct Relation{names, T}
   body::Set{NamedTuple}
 
-  Relation(heading::Heading) = new{heading.names, heading.t}(Set{NamedTuple{heading.names, heading.t}}())
-  Relation(heading::Heading, s::AbstractSet{T}) where {T<:NamedTuple} = new{heading.names, heading.t}(Set(shapeto.(s, Ref(heading))))
+  function Relation(ht::NamedTuple{names, T} where {names, T<:Tuple{Vararg{DataType}}})
+    heading = Heading(ht)
+    new{heading.names, heading.t}(Set{NamedTuple{heading.names, heading.t}}())
+  end
+  function Relation(ht::NamedTuple{names, T} where {names, T<:Tuple{Vararg{DataType}}},
+     s::AbstractSet{V} where {V<:NamedTuple})
+     heading = Heading(ht)
+     new{heading.names, heading.t}(Set(shapeto.(s, Ref(heading))))
+  end
   function Relation(s::AbstractSet{NamedTuple{names, T}}) where {names, T}
     heading = Heading((; zip(names, fieldtypes(T))...))
     new{heading.names, heading.t}(Set(shapeto.(s, Ref(heading))))
@@ -59,10 +71,24 @@ struct Relation{names, T}
     heading = Heading((; zip(names, fieldtypes(T))...))
     new{heading.names, heading.t}(Set(shapeto.(nts, Ref(heading))))
   end
-  Relation(heading::Heading, values::T...) where {T} = new{heading.names, heading.t}(Set(NamedTuple{heading.names, heading.t}.(values)))
-  Relation(heading::Heading, itr) = new{heading.names, heading.t}(Set(NamedTuple{heading.names, heading.t}.(itr)))
+  function Relation(ht::NamedTuple{names, T},
+   values::V...) where {V<:Tuple} where {names, T<:Tuple{Vararg{DataType}}}
+   namedValues = NamedTuple{names}.(values)
+   heading = Heading(ht)
+   # Seems we have to reorder first, then apply types
+   reorderedValues = NamedTuple{heading.names}.(namedValues)
+   new{heading.names, heading.t}(Set(NamedTuple{heading.names, heading.t}.(reorderedValues)))
+  end
+  function Relation(ht::NamedTuple{names, T}, itr) where {names, T<:Tuple{Vararg{DataType}}}
+    namedValues = NamedTuple{names}.(itr)
+    heading = Heading(ht)
+    # Seems we have to reorder first, then apply types
+    reorderedValues = NamedTuple{heading.names}.(namedValues)
+    new{heading.names, heading.t}(Set(NamedTuple{heading.names, heading.t}.(reorderedValues)))
+  end
   Relation() = new{(), Tuple{}}()
   Relation(empty::Tuple{}...) = new{(), Tuple{}}(Set(NamedTuple{(), Tuple{}}(empty[1])))
+  Relation(heading::Heading, itr) = new{heading.names, heading.t}(Set(shapeto.(itr, Ref(heading))))
 end
 
 function _promote(h::Heading, nt::NamedTuple)

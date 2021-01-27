@@ -88,7 +88,8 @@ struct Relation{names, T}
   end
   Relation() = new{(), Tuple{}}()
   Relation(empty::Tuple{}...) = new{(), Tuple{}}(Set(NamedTuple{(), Tuple{}}(empty[1])))
-  Relation(heading::Heading, itr) = new{heading.names, heading.t}(Set(shapeto.(itr, Ref(heading))))
+  # trusted constructor
+  Relation(names::Tuple{Vararg{Symbol}}, t::Type{T}, body::AbstractSet{V}) where {T<:Tuple, V<:NamedTuple} = new{names, t}(body)
 end
 
 function _promote(h::Heading, nt::NamedTuple)
@@ -111,7 +112,7 @@ function Relation(itr)
     heading = _promote(heading, nt)
     next = iterate(itr, state)
   end
-  Relation(heading, NamedTuple{heading.names}.(itr))
+  Relation(heading.names, heading.t, Set(NamedTuple{heading.names, heading.t}.(NamedTuple{heading.names}.(itr))))
 end
 
 const TABLE_DUM = Relation()
@@ -147,6 +148,10 @@ project(r::Relation, names::Symbol...) = Relation(Set(NamedTuple{(names...,)}.(r
 function naturaljoin(r1::Relation{names1, T1}, r2::Relation{names2, T2}) where {names1, T1, names2, T2}
   common = (intersect(names1, names2)...,)
   Relation(Set([merge(nt1, nt2) for nt1 in r1 for nt2 in r2 if NamedTuple{common}(nt1) == NamedTuple{common}(nt2)]))
+end
+
+function Base.union(r1::Relation{names, T}, relations::Relation{names, T}...) where {names, T}
+  Relation(names, T, union(r1.body, [r.body for r in relations]...))
 end
 
 end # module
